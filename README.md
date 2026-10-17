@@ -126,7 +126,7 @@ Table names are case-sensitive (`Orders`, not `orders`).
 
 Star schema: `fact_sales` (one row per order line) with `dim_date`, `dim_customer`, `dim_product`, `dim_rider`.
 
-![Star schema](docs/star_schema.png)
+![Star schema](docs/star_schema_workbench.png)
 
 Create (or recreate) the tables in `ecommerce_dw`:
 
@@ -136,11 +136,7 @@ docker exec -i ecommerce-mysql sh -c 'mysql -u"$MYSQL_USER" -p"$MYSQL_PASSWORD" 
 
 In PowerShell, `<` doesn't work; use `Get-Content sql/schema.sql | docker exec -i ...` instead.
 
-Regenerate the diagram from the live database (needs [Graphviz](https://graphviz.org/download/)):
-
-```powershell
-uv run python -m scripts.generate_erd
-```
+The diagram is a MySQL Workbench model: open `docs/star_schema.mwb` in Workbench to edit it, then **File → Export → Export as PNG** to `docs/star_schema_workbench.png`. After changing `sql/schema.sql`, update the model with **Database → Synchronize with Any Source**.
 
 ### To Implement
 
