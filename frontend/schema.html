@@ -1,0 +1,28 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Schema · E-Commerce DW</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <main class="container">
+    <h1>Schema</h1>
+    <p class="lead">Star schema of <code>ecommerce_dw</code>: one fact table, four dimensions. Click a table to browse it.</p>
+
+    <div class="legend">
+      <span><b class="key pk">PK</b> primary key</span>
+      <span><b class="key fk">FK</b> foreign key</span>
+    </div>
+
+    <div class="star" id="star"></div>
+  </main>
+
+  <script src="js/config.js"></script>
+  <script src="js/mock.js"></script>
+  <script src="js/api.js"></script>
+  <script src="js/layout.js"></script>
+  <script src="js/schema.js"></script>
+</body>
+</html>
