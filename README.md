@@ -122,9 +122,28 @@ SHOW TABLES;                  -- empty for now
 
 Table names are case-sensitive (`Orders`, not `orders`).
 
+## Warehouse Schema
+
+Star schema: `fact_sales` (one row per order line) with `dim_date`, `dim_customer`, `dim_product`, `dim_rider`.
+
+![Star schema](docs/star_schema.png)
+
+Create (or recreate) the tables in `ecommerce_dw`:
+
+```powershell
+docker exec -i ecommerce-mysql sh -c 'mysql -u"$MYSQL_USER" -p"$MYSQL_PASSWORD" ecommerce_dw' < sql/schema.sql
+```
+
+In PowerShell, `<` doesn't work; use `Get-Content sql/schema.sql | docker exec -i ...` instead.
+
+Regenerate the diagram from the live database (needs [Graphviz](https://graphviz.org/download/)):
+
+```powershell
+uv run python -m scripts.generate_erd
+```
+
 ### To Implement
 
-- Warehouse schema (`sql/`)
 - ETL pipeline (`etl/`)
 - OLAP queries and API endpoints (`app/`)
 
