@@ -25,6 +25,7 @@ def courier_monthly(year: int | None = None, courier_name: str | None = None,
                     conn: Connection = Depends(get_warehouse_connection)):
     return report_repository.courier_monthly(conn, year, courier_name, vehicle_type)
 
+
 @router.get("/category-quarterly")
 def category_quarterly(year: int,
                        conn: Connection = Depends(get_warehouse_connection)):

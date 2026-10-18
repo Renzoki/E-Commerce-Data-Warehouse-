@@ -107,6 +107,7 @@ def courier_monthly(conn: Connection, year: int | None = None,
     params = {"year": year, "courier_name": courier_name, "vehicle_type": vehicle_type}
     return [dict(r._mapping) for r in conn.execute(sql, params)]
 
+
 def category_quarterly(conn: Connection, year: int) -> list[dict]:
     sql = text("""
         SELECT CASE WHEN GROUPING(d.quarter) = 1 THEN 'All quarters'
