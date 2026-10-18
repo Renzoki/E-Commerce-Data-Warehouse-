@@ -145,14 +145,16 @@ const CONFIG = {
     },
     {
       id: "report_4",
-      title: "Report 4 — dim_rider breakdown",
-      description: "Placeholder. Grouped by vehicle_type, filtered by courier_name.",
-      endpoint: "",
-      chart: "doughnut",
-      x: "vehicle_type",
-      y: ["total_orders"],
+      title: "Monthly Courier Deliveries and Revenue",
+      description: "Orders delivered and revenue per courier per month. Roll-up rider → courier, day → month; dice by year, courier and vehicle type.",
+      endpoint: "/api/reports/courier-monthly",
+      chart: "table",
       params: [
-        { name: "courier_name", label: "Courier", type: "text", default: "" },
+        { name: "year", label: "Year", type: "select", options: ["", "2024", "2025"], default: "" },
+        { name: "courier_name", label: "Courier", type: "select",
+          options: ["", "JNT", "LBCD", "FEDEZ"], default: "" },
+        { name: "vehicle_type", label: "Vehicle type", type: "select",
+          options: ["", "Motorcycle", "Bicycle", "Tricycle", "Car"], default: "" },
       ],
     },
     {
