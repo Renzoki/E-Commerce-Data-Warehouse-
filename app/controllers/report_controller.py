@@ -17,3 +17,10 @@ def sales_by_location(
     conn: Connection = Depends(get_warehouse_connection)
 ):
     return report_repository.sales_by_location(conn, level)
+
+
+@router.get("/courier-monthly")
+def courier_monthly(year: int | None = None, courier_name: str | None = None,
+                    vehicle_type: str | None = None,
+                    conn: Connection = Depends(get_warehouse_connection)):
+    return report_repository.courier_monthly(conn, year, courier_name, vehicle_type)
