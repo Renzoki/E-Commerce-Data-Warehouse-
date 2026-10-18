@@ -83,24 +83,36 @@ const CONFIG = {
     },
   },
 
-  // ---------- Overview page: single-number tiles (your queries) ----------
-  // Endpoint returns one row: [{ "value": 12345 }]  (or set `field`)
+  // ---------- Overview page: headline totals (LIVE) ----------
+  // Served by app/controllers/overview_controller.py -> GET /api/overview
+  // One request returns a single row; each tile reads one field from it.
+  overview: { id: "overview", endpoint: "/api/overview" },
   kpis: [
-    { id: "kpi_sales",     label: "Total sales (line_amount)", endpoint: "", field: "value", format: "money" },
-    { id: "kpi_orders",    label: "Orders",                    endpoint: "", field: "value", format: "int" },
-    { id: "kpi_customers", label: "Customers",                 endpoint: "", field: "value", format: "int" },
-    { id: "kpi_riders",    label: "Riders",                    endpoint: "", field: "value", format: "int" },
+    { label: "Total revenue",       field: "total_revenue",   format: "money" },
+    { label: "Orders delivered",    field: "total_orders",    format: "int" },
+    { label: "Avg. order value",    field: "avg_order_value", format: "money" },
+    { label: "Units sold",          field: "units_sold",      format: "int" },
+    { label: "Order lines (fact rows)", field: "order_lines", format: "int" },
+    { label: "Customers",           field: "customers",       format: "int" },
+    { label: "Products",            field: "products",        format: "int" },
+    { label: "Riders",              field: "riders",          format: "int" },
+    { label: "Couriers",            field: "couriers",        format: "int" },
   ],
 
   // ---------- Browse page: warehouse tables (LIVE) ----------
   // Served by app/controllers/table_controller.py -> GET /api/tables/{name}
   // The page sends ?q=&sort=&order=&limit=&offset= and gets {rows, total, columns}.
   datasets: [
-    { id: "fact_sales",   label: "fact_sales",   endpoint: "/api/tables/fact_sales",   server: true },
-    { id: "dim_date",     label: "dim_date",     endpoint: "/api/tables/dim_date",     server: true },
-    { id: "dim_customer", label: "dim_customer", endpoint: "/api/tables/dim_customer", server: true },
-    { id: "dim_product",  label: "dim_product",  endpoint: "/api/tables/dim_product",  server: true },
-    { id: "dim_rider",    label: "dim_rider",    endpoint: "/api/tables/dim_rider",    server: true },
+    { id: "fact_sales", label: "fact_sales — order lines (fact)", endpoint: "/api/tables/fact_sales", server: true,
+      description: "One row per product line in a delivered order. Measures: quantity, unit_price, line_amount (quantity × unit_price). order_id and order_number are degenerate dimensions." },
+    { id: "dim_date", label: "dim_date — delivery dates", endpoint: "/api/tables/dim_date", server: true,
+      description: "One row per calendar day between the first and last delivery date. Hierarchy: year → quarter → month → day. date_key is YYYYMMDD." },
+    { id: "dim_customer", label: "dim_customer — customers", endpoint: "/api/tables/dim_customer", server: true,
+      description: "One row per source user. Hierarchies: country → city → customer, and age_group → customer (age as of 2025-09-23)." },
+    { id: "dim_product", label: "dim_product — products", endpoint: "/api/tables/dim_product", server: true,
+      description: "One row per source product. Hierarchy: category → product. Categories are cleaned (e.g. BAG → Bags, Toy/TOYS → Toys); price_range bands the unit price." },
+    { id: "dim_rider", label: "dim_rider — riders & couriers", endpoint: "/api/tables/dim_rider", server: true,
+      description: "One row per delivery rider, with the courier denormalized in (no separate dim_courier). Hierarchies: courier → rider, and vehicle_type → rider." },
   ],
 
   // ---------- Reports page: one card per OLAP query (your queries) ----------
@@ -111,44 +123,54 @@ const CONFIG = {
   reports: [
     {
       id: "report_1",
-      title: "Top Customers — yearly and monthly",
-      description: "Top 10 customers of 2025, then top 5 per month.",
-      endpoint: "/api/reports/top-sales",
-      chart: "table",
+      title: "Product Revenue - Category and Quarter",
+      description: "Total revenue per product category in each quarter, with quarter subtotals and a grand total. Roll-up category → quarter.",
+      endpoint: "/api/reports/category-quarterly",
+      chart: "bar",
+      x: "quarter",
+      y: ["total_revenue"],
+      chartRows: (rows) => rows.filter((row) => row.row_type === "quarter_total"),
+      params: [
+        { name: "year", label: "Year", type: "select", options: ["2024", "2025"], default: "2025" }
+      ]
     },
+
     {
       id: "report_2",
-      title: "Report 2 — slice on dim_product",
-      description: "Placeholder. Grouped by category, sliced by year and price_range.",
-      endpoint: "",
+      title: "Sales - City and Country",
+      description: "Analyze which cities and countries contribute the most to total sales revenue. Roll-up city → country; dice by city and country. The chart shows the top 15 by revenue; the data table lists every row.",
+      endpoint: "/api/reports/sales-by-location",
       chart: "bar",
-      x: "category",
-      y: ["total_sales"],
+      horizontal: true,
+      // city rows also have country, so label them "City, Country" (same city name can exist in two countries)
+      x: (row) => (row.city ? `${row.city}, ${row.country}` : row.country),
+      y: ["total_revenue"],
+      // rows already come sorted by revenue; chart the top 15 so labels stay readable (table keeps all rows)
+      chartRows: (rows) => rows.slice(0, 15),
       params: [
-        { name: "year", label: "Year", type: "select", options: ["", "2024", "2025"], default: "" },
-        { name: "price_range", label: "Price range", type: "select",
-          options: ["", "Budget", "Mid", "Premium"], default: "" },
-      ],
+        { name: "level", label: "Group By", type: "select", options: ["city", "country"], default: "city" }
+      ]
     },
+
     {
       id: "report_3",
-      title: "Report 3 — dice on dim_customer",
-      description: "Placeholder. Grouped by age_group, diced by gender and city.",
-      endpoint: "",
-      chart: "bar",
-      x: "age_group",
-      y: ["total_sales", "total_quantity"],
+      title: "Top Customers — Monthly and Yearly",
+      description: "View the top customers by total sales revenue, grouped by month and year. Roll-up month → year; dice by customer and year.",
+      endpoint: "/api/reports/top-sales",
+      chart: "table",
       params: [
-        { name: "gender", label: "Gender", type: "select", options: ["", "M", "F"], default: "" },
-        { name: "city", label: "City", type: "text", default: "" },
+        {name: "level", label: "View", type: "select", options: ["2024", "2025", "month"], default: "month"},
       ],
     },
+
     {
       id: "report_4",
       title: "Monthly Courier Deliveries and Revenue",
       description: "Orders delivered and revenue per courier per month. Roll-up rider → courier, day → month; dice by year, courier and vehicle type.",
       endpoint: "/api/reports/courier-monthly",
-      chart: "table",
+      chart: "bar",
+      x: "month_name",
+      y: ["total_deliveries"],
       params: [
         { name: "year", label: "Year", type: "select", options: ["", "2024", "2025"], default: "" },
         { name: "courier_name", label: "Courier", type: "select",
@@ -157,15 +179,5 @@ const CONFIG = {
           options: ["", "Motorcycle", "Bicycle", "Tricycle", "Car"], default: "" },
       ],
     },
-    {
-      id: "report_5",
-      title: "Sales by City and Country",
-      description: "Analyze which cities and countries contribute the most to total sales revenue using OLAP roll-up.",
-      endpoint: "/api/reports/sales-by-location",
-      chart: "table",
-      params: [
-    { name: "level", label: "Group By", type: "select", options: ["city", "country"], default: "city"}
-  ]
-  },
   ],
 };

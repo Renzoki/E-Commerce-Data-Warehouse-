@@ -4,15 +4,8 @@ import pandas as pd
 AS_OF = pd.Timestamp("2025-09-23")   # ages are computed on this date (last delivery date in the data)
 
 GENDER_MAP = {
-<<<<<<< Updated upstream
-    "Male": "M",
-    "M": "M",
-    "Female": "F",
-    "F": "F",
-=======
     "Male" : 'M',
     "Female" : 'F',
->>>>>>> Stashed changes
 }
 
 CATEGORY_MAP = {

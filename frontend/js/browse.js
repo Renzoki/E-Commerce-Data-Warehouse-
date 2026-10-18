@@ -45,6 +45,7 @@
   async function load() {
     tableEl.innerHTML = `<p class="empty">Loading…</p>`;
     const d = state.dataset;
+    el("datasetInfo").textContent = d.description || "";
     const serverMode = d.server && !isMock(d);
 
     try {

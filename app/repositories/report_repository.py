@@ -1,40 +1,52 @@
 from sqlalchemy import text
 from sqlalchemy.engine import Connection
 
+# level is "2024" / "2025" (that year's top 10) or "month" (top 5 per month)
 
-def top_sales(conn: Connection) -> list[dict]:
+def top_sales(conn: Connection, level: str = "month") -> list[dict]:
     sql = text("""
-        WITH annual_top_customers AS (
-            SELECT 0 AS sort_key, 'Yearly Top 10' AS report_type, '2025' AS time_period, c.full_name, c.customer_key, SUM(f.line_amount) AS yearly_spending
-            FROM fact_sales f
-            JOIN dim_date d ON d.date_key = f.date_key
-            JOIN dim_customer c ON c.customer_key = f.customer_key
-            WHERE d.year = 2025
-            GROUP BY c.customer_key, c.full_name
-            ORDER BY yearly_spending DESC
-            LIMIT 10
-        ),
+                WITH annual_top_customers AS (
+                    SELECT d.year AS sort_year, 0 AS sort_key, 'Yearly Top 10' AS report_type,
+                        CAST(d.year AS CHAR) AS time_period, f.customer_key,
+                        SUM(f.line_amount) AS yearly_spending,
+                        ROW_NUMBER() OVER (PARTITION BY d.year ORDER BY SUM(f.line_amount) DESC) AS rank_number
+                    FROM fact_sales f
+                    JOIN dim_date d ON d.date_key = f.date_key
+                    WHERE 'Monthly Top 5' = 'Yearly Top 10'
+                    AND d.year IN (2024, 2025)
+                    AND (NULL IS NULL OR d.year = NULL)
+                    GROUP BY d.year, f.customer_key
+                ),
 
-        monthly_top_customers AS (
-            SELECT d.month AS sort_key, 'Monthly Top 5' AS report_type, d.month_name AS time_period, c.full_name, c.customer_key, SUM(f.line_amount) AS monthly_spending,
-            RANK() OVER (PARTITION BY d.month ORDER BY SUM(f.line_amount) DESC) AS rank_number
-            FROM fact_sales f
-            JOIN dim_date d ON d.date_key = f.date_key
-            JOIN dim_customer c ON c.customer_key = f.customer_key
-            WHERE d.year = 2025
-            GROUP BY d.month, d.month_name, c.customer_key, c.full_name
-        )
+                monthly_top_customers AS (
+                    SELECT d.year AS sort_year, d.month AS sort_key, 'Monthly Top 5' AS report_type,
+                        CONCAT(d.month_name, ' ', d.year) AS time_period, f.customer_key,
+                        SUM(f.line_amount) AS monthly_spending,
+                        RANK() OVER (PARTITION BY d.year, d.month ORDER BY SUM(f.line_amount) DESC) AS rank_number
+                    FROM fact_sales f
+                    JOIN dim_date d ON d.date_key = f.date_key
+                    WHERE 'Monthly Top 5' = 'Monthly Top 5'
+                    AND d.year IN (2024, 2025)
+                    GROUP BY d.year, d.month, d.month_name, f.customer_key
+                )
 
-        SELECT report_type, time_period, full_name, customer_key, yearly_spending
-        FROM (
-            SELECT sort_key, report_type, time_period, full_name, customer_key, yearly_spending FROM annual_top_customers
-            UNION ALL
-            SELECT sort_key, report_type, time_period, full_name, customer_key, monthly_spending FROM monthly_top_customers WHERE rank_number <= 5
-        ) AS combined
-        ORDER BY sort_key, yearly_spending DESC;
-
-    """)
-    return [dict(r._mapping) for r in conn.execute(sql)]
+                SELECT combined.report_type, combined.time_period, c.full_name,
+                    combined.customer_key, combined.yearly_spending
+                FROM (
+                    SELECT sort_year, sort_key, report_type, time_period, customer_key, yearly_spending
+                    FROM annual_top_customers WHERE rank_number <= 10
+                    UNION ALL
+                    SELECT sort_year, sort_key, report_type, time_period, customer_key, monthly_spending
+                    FROM monthly_top_customers WHERE rank_number <= 5
+                ) AS combined
+                JOIN dim_customer c ON c.customer_key = combined.customer_key
+                ORDER BY combined.sort_year, combined.sort_key, combined.yearly_spending DESC;
+            """)
+    if level == "month":
+        params = {"report_type": "Monthly Top 5", "period": None}
+    else:
+        params = {"report_type": "Yearly Top 10", "period": level}
+    return [dict(r._mapping) for r in conn.execute(sql, params)]
 
 
 

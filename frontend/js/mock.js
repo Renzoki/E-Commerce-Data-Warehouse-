@@ -10,7 +10,7 @@ const MOCK = (() => {
   const pick = (arr) => arr[Math.floor(rnd() * arr.length)];
   const int = (lo, hi) => lo + Math.floor(rnd() * (hi - lo + 1));
   const pad = (n, w = 2) => String(n).padStart(w, "0");
-  const ageGroup = (a) => (a < 25 ? "18-24" : a < 35 ? "25-34" : a < 45 ? "35-44" : a < 55 ? "45-54" : "55+");
+  const ageGroup = (a) => (a < 18 ? "Under 18" : a < 25 ? "18-24" : a < 35 ? "25-34" : a < 45 ? "35-44" : a < 55 ? "45-54" : "55+");
 
   const DAYS = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
   const MONTHS = ["January", "February", "March", "April", "May", "June", "July",
@@ -34,9 +34,9 @@ const MOCK = (() => {
   }
 
   // ---------- dim_product ----------
-  const categories = ["Electronics", "Fashion", "Home", "Beauty", "Sports", "Toys"];
+  const categories = ["Toys", "Clothes", "Gadgets", "Bags", "Men's Apparel", "Makeup", "Electronics", "Appliances", "Laptops"];
   const dim_product = Array.from({ length: 40 }, (_, i) => {
-    const price = +(50 + rnd() * 4950).toFixed(2);
+    const price = +(50 + rnd() * 9950).toFixed(2);
     return {
       product_key: i + 1,
       product_id: 1000 + i,
@@ -44,7 +44,7 @@ const MOCK = (() => {
       product_name: `Sample product ${i + 1}`,
       category: pick(categories),
       unit_price: price,
-      price_range: price < 500 ? "Budget" : price < 2000 ? "Mid" : "Premium",
+      price_range: price < 2500 ? "Under 2500" : price < 5000 ? "2500-4999.99" : price < 7500 ? "5000-7499.99" : "7500 and up",
     };
   });
 
@@ -67,7 +67,7 @@ const MOCK = (() => {
   });
 
   // ---------- dim_rider ----------
-  const couriers = ["Courier A", "Courier B", "Courier C"];
+  const couriers = ["JNT", "LBCD", "FEDEZ"];
   const dim_rider = Array.from({ length: 25 }, (_, i) => {
     const age = int(19, 58);
     return {
@@ -77,7 +77,7 @@ const MOCK = (() => {
       gender: pick(["M", "F"]),
       age,
       age_group: ageGroup(age),
-      vehicle_type: pick(["Motorcycle", "Motorcycle", "Bicycle", "Car", "Truck"]),
+      vehicle_type: pick(["Motorcycle", "Motorcycle", "Bicycle", "Tricycle", "Car"]),
       courier_name: pick(couriers),
     };
   });
@@ -111,10 +111,24 @@ const MOCK = (() => {
   const group = (rows, keyFn) => rows.reduce((g, r) => ((g[keyFn(r)] ??= []).push(r), g), {});
 
   return {
-    kpi_sales:     () => [{ value: sum(fact_sales, "line_amount") }],
-    kpi_orders:    () => [{ value: new Set(fact_sales.map((f) => f.order_id)).size }],
-    kpi_customers: () => [{ value: dim_customer.length }],
-    kpi_riders:    () => [{ value: dim_rider.length }],
+    overview: () => {
+      const revenue = sum(fact_sales, "line_amount");
+      const orders = new Set(fact_sales.map((f) => f.order_id)).size;
+      const dates = fact_sales.map((f) => D[f.date_key].full_date).sort();
+      return [{
+        total_revenue: revenue,
+        total_orders: orders,
+        order_lines: fact_sales.length,
+        units_sold: sum(fact_sales, "quantity"),
+        avg_order_value: orders ? revenue / orders : 0,
+        customers: dim_customer.length,
+        products: dim_product.length,
+        riders: dim_rider.length,
+        couriers: new Set(dim_rider.map((r) => r.courier_name)).size,
+        first_date: dates[0],
+        last_date: dates[dates.length - 1],
+      }];
+    },
 
     fact_sales:   () => fact_sales,
     dim_date:     () => dim_date,
