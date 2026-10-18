@@ -14,7 +14,7 @@ Open http://127.0.0.1:8000 — FastAPI serves this folder at `/`, so the pages a
 
 | Page | File | Driven by |
 |---|---|---|
-| Overview | `index.html` | `CONFIG.kpis` |
+| Overview | `index.html` | `CONFIG.overview` + `CONFIG.kpis` |
 | Browse | `browse.html` | `CONFIG.datasets` |
 | Reports | `reports.html` | `CONFIG.reports` |
 | Schema | `schema.html` | `CONFIG.schema` (the star schema) |
@@ -22,7 +22,8 @@ Open http://127.0.0.1:8000 — FastAPI serves this folder at `/`, so the pages a
 ## What's live vs mock
 
 - **Browse is connected to `ecommerce_dw`.** `GET /api/tables/{name}` pages through the five star-schema tables (search, sort, paging done in the database). Code: `app/controllers/table_controller.py` → `app/services/table_service.py` → `app/repositories/table_repository.py`. This only reads rows; it is not an OLAP query.
-- **Overview KPIs and Reports are still mock** until your group writes those queries/endpoints.
+- **Overview is connected.** `GET /api/overview` returns one row of whole-warehouse totals (revenue, orders, units, customers, products, riders, couriers, first/last delivery date). Code: `app/controllers/overview_controller.py` → `app/repositories/overview_repository.py`. Plain counts/sums, not an OLAP report.
+- **Reports** are connected through `app/controllers/report_controller.py`; any report whose `endpoint` is `""` falls back to mock.
 - A table that isn't created yet shows a "doesn't exist in the warehouse yet" message instead of crashing.
 
 ## Hooking up a query
@@ -39,7 +40,7 @@ Items whose `endpoint` is still `""` keep showing mock data from `js/mock.js`, s
 
 - **Report / client-side dataset:** a JSON array of row objects.
   `[{"period": "2024", "revenue": 1234.5}, ...]`
-- **KPI:** one row, `[{"value": 123}]`
+- **Overview:** one row with every KPI field, `[{"total_revenue": 123.4, "total_orders": 10, ...}]`; each tile in `CONFIG.kpis` names its `field`.
 - **Server-side dataset (`server: true`):** receives `q, sort, order, limit, offset` as query params and returns `{"rows": [...], "total": 12345}`. Use this for large fact tables.
 
 Report `params` are sent as query params with the same `name`, e.g. `?level=quarter` for roll-up / drill-down.

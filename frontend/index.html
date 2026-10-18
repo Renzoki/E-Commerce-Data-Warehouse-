@@ -9,22 +9,22 @@
 <body>
   <main class="container">
     <h1>Overview</h1>
-    <p class="lead">Summary figures from the data warehouse.</p>
+    <p class="lead">Headline totals from the <code>ecommerce_dw</code> star schema. <span id="period"></span></p>
 
     <section class="kpi-grid" id="kpis"></section>
 
     <section class="cards">
       <a class="card link-card" href="browse.html">
         <h2>Browse</h2>
-        <p>View, search and sort warehouse tables.</p>
+        <p>Page through fact_sales and the four dimension tables — search any column, click a header to sort.</p>
       </a>
       <a class="card link-card" href="reports.html">
         <h2>Reports</h2>
-        <p>OLAP reports with roll-up / drill-down and charts.</p>
+        <p>Four OLAP reports: category × quarter revenue, sales by location, top customers, and monthly courier deliveries.</p>
       </a>
       <a class="card link-card" href="schema.html">
         <h2>Schema</h2>
-        <p>The fact_sales star schema and its four dimensions.</p>
+        <p>fact_sales (one row per order line) and its date, customer, product and rider dimensions.</p>
       </a>
     </section>
   </main>

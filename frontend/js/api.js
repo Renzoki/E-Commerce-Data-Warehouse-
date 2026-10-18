@@ -47,6 +47,7 @@ async function getData(item, params = {}) {
 const fmt = {
   int: (v) => Number(v).toLocaleString("en-PH", { maximumFractionDigits: 0 }),
   money: (v) => Number(v).toLocaleString("en-PH", { style: "currency", currency: "PHP" }),
+  date: (v) => new Date(`${v}T00:00:00`).toLocaleDateString("en-PH", { year: "numeric", month: "short", day: "numeric" }),
   // whole numbers stay whole; decimals always show 2 places (1,680.10)
   num: (v) => Number(v).toLocaleString("en-PH",
     Number.isInteger(Number(v)) ? {} : { minimumFractionDigits: 2, maximumFractionDigits: 2 }),

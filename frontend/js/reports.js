@@ -11,8 +11,12 @@
   function paramInput(p) {
     const id = `p-${p.name}`;
     if (p.type === "select") {
-      const opts = p.options.map((o) =>
-        `<option value="${escapeHtml(o)}" ${o === p.default ? "selected" : ""}>${o === "" ? "All" : escapeHtml(o)}</option>`).join("");
+      // options can be plain strings or { value, label }
+      const opts = p.options.map((o) => {
+        const value = typeof o === "object" ? o.value : o;
+        const label = typeof o === "object" ? o.label : (o === "" ? "All" : o);
+        return `<option value="${escapeHtml(value)}" ${value === p.default ? "selected" : ""}>${escapeHtml(label)}</option>`;
+      }).join("");
       return `<label>${escapeHtml(p.label)}<select name="${p.name}" id="${id}">${opts}</select></label>`;
     }
     return `<label>${escapeHtml(p.label)}<input name="${p.name}" id="${id}" type="${p.type || "text"}" value="${escapeHtml(p.default ?? "")}"></label>`;
@@ -69,7 +73,9 @@
       return null;
     }
     const round = r.chart === "pie" || r.chart === "doughnut";
-    const labels = rows.map((row) => row[r.x]);
+    rows = r.chartRows ? r.chartRows(rows) : rows;
+    // x can be a column name or a function(row) -> label
+    const labels = rows.map((row) => (typeof r.x === "function" ? r.x(row) : row[r.x]));
     const datasets = r.y.map((col, i) => ({
       label: col,
       data: rows.map((row) => Number(row[col])),
@@ -83,8 +89,9 @@
       options: {
         responsive: true,
         maintainAspectRatio: false,
+        indexAxis: r.horizontal ? "y" : "x",   // horizontal bars for long labels
         plugins: { legend: { display: round || r.y.length > 1 } },
-        scales: round ? {} : { y: { beginAtZero: true } },
+        scales: round ? {} : { [r.horizontal ? "x" : "y"]: { beginAtZero: true } },
       },
     });
   }

@@ -9,7 +9,7 @@
 <body>
   <main class="container">
     <h1>Browse</h1>
-    <p class="lead">Pick a table, then search or click a column header to sort.</p>
+    <p class="lead">Raw rows from the <code>ecommerce_dw</code> warehouse. Pick a table, then search or click a column header to sort.</p>
 
     <form class="toolbar" id="controls" onsubmit="return false">
       <label>Table
@@ -26,6 +26,7 @@
     </form>
 
     <div class="card">
+      <p class="muted" id="datasetInfo"></p>
       <div class="table-meta">
         <span id="count"></span>
         <span id="mockNote" class="badge" hidden>Mock data</span>

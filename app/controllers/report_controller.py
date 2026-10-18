@@ -8,8 +8,11 @@ router = APIRouter(prefix="/reports", tags=["reports"])
 
 
 @router.get("/top-sales")
-def top_sales(conn: Connection = Depends(get_warehouse_connection)):
-    return report_repository.top_sales(conn)
+def top_sales(
+    level: Literal["2024", "2025", "month"] = "month",
+    conn: Connection = Depends(get_warehouse_connection)
+):
+    return report_repository.top_sales(conn, level)
 
 @router.get("/sales-by-location")
 def sales_by_location(
