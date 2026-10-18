@@ -35,3 +35,54 @@ def top_sales(conn: Connection) -> list[dict]:
 
     """)
     return [dict(r._mapping) for r in conn.execute(sql)]
+
+
+
+def sales_by_location(conn: Connection, level: str = "city") -> list[dict]:
+
+    if level == "city":
+        sql = text("""
+            SELECT
+                c.country,
+                c.city,
+                COUNT(DISTINCT f.customer_key) AS total_customers,
+                COUNT(DISTINCT f.order_id) AS total_orders,
+                SUM(f.line_amount) AS total_revenue
+
+            FROM fact_sales f
+
+            JOIN dim_customer c
+                ON f.customer_key = c.customer_key
+
+            GROUP BY
+                c.country,
+                c.city
+
+            ORDER BY
+                total_revenue DESC;
+        """)
+
+    elif level == "country":
+        sql = text("""
+            SELECT
+                c.country,
+                COUNT(DISTINCT f.customer_key) AS total_customers,
+                COUNT(DISTINCT f.order_id) AS total_orders,
+                SUM(f.line_amount) AS total_revenue
+
+            FROM fact_sales f
+
+            JOIN dim_customer c
+                ON f.customer_key = c.customer_key
+
+            GROUP BY
+                c.country
+
+            ORDER BY
+                total_revenue DESC;
+        """)
+
+    else:
+        raise ValueError("Invalid level. Use 'city' or 'country'.")
+
+    return [dict(row._mapping) for row in conn.execute(sql)]
