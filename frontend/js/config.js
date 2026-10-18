@@ -155,5 +155,15 @@ const CONFIG = {
         { name: "courier_name", label: "Courier", type: "text", default: "" },
       ],
     },
+    {
+      id: "report_5",
+      title: "Sales by City and Country",
+      description: "Analyze which cities and countries contribute the most to total sales revenue using OLAP roll-up.",
+      endpoint: "/api/reports/sales-by-location",
+      chart: "table",
+      params: [
+    { name: "level", label: "Group By", type: "select", options: ["city", "country"], default: "city"}
+  ]
+  },
   ],
 };
