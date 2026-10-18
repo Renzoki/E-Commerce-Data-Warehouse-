@@ -124,7 +124,7 @@ const CONFIG = {
     {
       id: "report_1",
       title: "Product Revenue - Category and Quarter",
-      description: "Total revenue per product category in each quarter, with quarter subtotals and a grand total. Roll-up category → quarter.",
+      description: "Total revenue per product category in each quarter, with quarter subtotals and a grand total. Roll-up individual categories → all categories.",
       endpoint: "/api/reports/category-quarterly",
       chart: "bar",
       x: "quarter",
@@ -138,7 +138,7 @@ const CONFIG = {
     {
       id: "report_2",
       title: "Sales - City and Country",
-      description: "Analyze which cities and countries contribute the most to total sales revenue. Roll-up city → country; dice by city and country. The chart shows the top 15 by revenue; the data table lists every row.",
+      description: "Analyze which cities and countries contribute the most to total sales revenue. Roll-up city → country; dice by city and country.",
       endpoint: "/api/reports/sales-by-location",
       chart: "bar",
       horizontal: true,

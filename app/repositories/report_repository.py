@@ -12,9 +12,9 @@ def top_sales(conn: Connection, level: str = "month") -> list[dict]:
                         ROW_NUMBER() OVER (PARTITION BY d.year ORDER BY SUM(f.line_amount) DESC) AS rank_number
                     FROM fact_sales f
                     JOIN dim_date d ON d.date_key = f.date_key
-                    WHERE 'Monthly Top 5' = 'Yearly Top 10'
+                    WHERE :report_type = 'Yearly Top 10'
                     AND d.year IN (2024, 2025)
-                    AND (NULL IS NULL OR d.year = NULL)
+                    AND (:period IS NULL OR d.year = :period)
                     GROUP BY d.year, f.customer_key
                 ),
 
@@ -25,7 +25,7 @@ def top_sales(conn: Connection, level: str = "month") -> list[dict]:
                         RANK() OVER (PARTITION BY d.year, d.month ORDER BY SUM(f.line_amount) DESC) AS rank_number
                     FROM fact_sales f
                     JOIN dim_date d ON d.date_key = f.date_key
-                    WHERE 'Monthly Top 5' = 'Monthly Top 5'
+                    WHERE :report_type = 'Monthly Top 5'
                     AND d.year IN (2024, 2025)
                     GROUP BY d.year, d.month, d.month_name, f.customer_key
                 )
