@@ -10,10 +10,15 @@ services:
       MYSQL_DATABASE: ${MYSQL_DATABASE}
     ports:
       - "${MYSQL_PORT:-3306}:3306"
+    command:                                   # CHANGE 1: settings that used to be in my.cnf
+      - --character-set-server=utf8mb4
+      - --max-allowed-packet=256M
+      - --innodb-buffer-pool-size=1G
+      - --local-infile=1
     volumes:
       - mysql_data:/var/lib/mysql
       - ./docker/mysql/init:/docker-entrypoint-initdb.d:ro
-      - ./docker/mysql/conf:/etc/mysql/conf.d:ro
+      # CHANGE 2: the my.cnf mount line is removed
       - ./data:/data:ro
       - ./scripts:/scripts:ro
     healthcheck:
