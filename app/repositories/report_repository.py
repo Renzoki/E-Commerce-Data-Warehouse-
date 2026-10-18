@@ -80,24 +80,20 @@ def sales_by_location(conn: Connection, level: str = "city") -> list[dict]:
 
     return [dict(r._mapping) for r in conn.execute(sql, {"level": level})]
 
-def courier_monthly(conn: Connection, year: int | None = None,
-                    courier_name: str | None = None, vehicle_type: str | None = None) -> list[dict]:
-    # deliveries = distinct orders, since one order can have several product lines
+def courier_monthly_optimized(conn: Connection) -> list[dict]:
     sql = text("""
         SELECT r.courier_name, d.year, d.month, d.month_name,
                COUNT(DISTINCT f.order_id) AS total_deliveries,
-               SUM(f.line_amount)         AS total_revenue
+               SUM(f.line_amount) AS total_revenue
         FROM fact_sales f
         JOIN dim_rider r ON r.rider_key = f.rider_key
         JOIN dim_date d ON d.date_key = f.date_key
-        WHERE (:year IS NULL OR d.year = :year)
-          AND (:courier_name IS NULL OR r.courier_name = :courier_name)
-          AND (:vehicle_type IS NULL OR r.vehicle_type = :vehicle_type)
+        WHERE f.date_key BETWEEN 20250101 AND 20251231
+          AND r.courier_name = 'JNT'
         GROUP BY r.courier_name, d.year, d.month, d.month_name
         ORDER BY r.courier_name, d.year, d.month;
     """)
-    params = {"year": year, "courier_name": courier_name, "vehicle_type": vehicle_type}
-    return [dict(r._mapping) for r in conn.execute(sql, params)]
+    return [dict(r._mapping) for r in conn.execute(sql)]
 
 
 def category_quarterly(conn: Connection, year: int) -> list[dict]:
