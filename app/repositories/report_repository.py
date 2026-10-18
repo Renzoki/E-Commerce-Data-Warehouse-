@@ -51,47 +51,34 @@ def top_sales(conn: Connection, level: str = "month") -> list[dict]:
 
 
 def sales_by_location(conn: Connection, level: str = "city") -> list[dict]:
-    if level == "city":
-        sql = text("""
-            SELECT c.country, c.city,
-                   COUNT(*) AS total_customers,
-                   SUM(s.total_orders) AS total_orders,
-                   SUM(s.total_revenue) AS total_revenue
-            FROM dim_customer c
-            JOIN (
-                SELECT customer_key,
-                       COUNT(DISTINCT order_id) AS total_orders,
-                       SUM(line_amount) AS total_revenue
-                FROM fact_sales
-                GROUP BY customer_key
-            ) AS s ON c.customer_key = s.customer_key
-            GROUP BY c.country, c.city
-            ORDER BY total_revenue DESC;
-        """)
-
-    elif level == "country":
-        sql = text("""
-            SELECT c.country,
-                   COUNT(*) AS total_customers,
-                   SUM(s.total_orders) AS total_orders,
-                   SUM(s.total_revenue) AS total_revenue
-            FROM dim_customer c
-            JOIN (
-                SELECT customer_key,
-                       COUNT(DISTINCT order_id) AS total_orders,
-                       SUM(line_amount) AS total_revenue
-                FROM fact_sales
-                GROUP BY customer_key
-            ) AS s ON c.customer_key = s.customer_key
-            GROUP BY c.country
-            ORDER BY total_revenue DESC;
-        """)
-
-    else:
+    if level not in ("city", "country"):
         raise ValueError("Invalid level. Use 'city' or 'country'.")
 
-    return [dict(r._mapping) for r in conn.execute(sql)]
+    sql = text("""
+        SELECT c.country,
+               CASE WHEN GROUPING(c.city) = 1 THEN NULL
+                    ELSE c.city END AS city,
+               COUNT(*) AS total_customers,
+               SUM(s.total_orders) AS total_orders,
+               SUM(s.total_revenue) AS total_revenue
+        FROM dim_customer c
+        JOIN (
+            SELECT customer_key,
+                   COUNT(DISTINCT order_id) AS total_orders,
+                   SUM(line_amount) AS total_revenue
+            FROM fact_sales
+            GROUP BY customer_key
+        ) AS s ON c.customer_key = s.customer_key
+        GROUP BY c.country, c.city WITH ROLLUP
+        HAVING GROUPING(c.country) = 0
+           AND (
+               (:level = 'city' AND GROUPING(c.city) = 0)
+               OR (:level = 'country' AND GROUPING(c.city) = 1)
+           )
+        ORDER BY total_revenue DESC;
+    """)
 
+    return [dict(r._mapping) for r in conn.execute(sql, {"level": level})]
 
 def courier_monthly(conn: Connection, year: int | None = None,
                     courier_name: str | None = None, vehicle_type: str | None = None) -> list[dict]:
