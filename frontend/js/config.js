@@ -113,7 +113,7 @@ const CONFIG = {
       id: "report_1",
       title: "Report 1 — roll-up / drill-down on dim_date",
       description: "Placeholder. Hierarchy: year → quarter → month.",
-      endpoint: "",
+      endpoint: /api/reports/top-sales,
       chart: "line",
       x: "period",
       y: ["total_sales"],

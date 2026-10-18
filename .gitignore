@@ -7,4 +7,10 @@ __pycache__/
 # IDE
 .idea/
 /data
+<<<<<<< Updated upstream
 .DS_Store
+=======
+
+#Justine's VSCode
+.vscode/settings.json
+>>>>>>> Stashed changes
