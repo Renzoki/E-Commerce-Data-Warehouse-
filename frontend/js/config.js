@@ -111,16 +111,10 @@ const CONFIG = {
   reports: [
     {
       id: "report_1",
-      title: "Report 1 — roll-up / drill-down on dim_date",
-      description: "Placeholder. Hierarchy: year → quarter → month.",
-      endpoint: /api/reports/top-sales,
-      chart: "line",
-      x: "period",
-      y: ["total_sales"],
-      params: [
-        { name: "level", label: "Level", type: "select",
-          options: ["year", "quarter", "month"], default: "year" },
-      ],
+      title: "Top Customers — yearly and monthly",
+      description: "Top 10 customers of 2025, then top 5 per month.",
+      endpoint: "/api/reports/top-sales",
+      chart: "table",
     },
     {
       id: "report_2",
