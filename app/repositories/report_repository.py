@@ -35,3 +35,94 @@ def top_sales(conn: Connection) -> list[dict]:
 
     """)
     return [dict(r._mapping) for r in conn.execute(sql)]
+
+
+
+def sales_by_location(conn: Connection, level: str = "city") -> list[dict]:
+
+    if level == "city":
+        sql = text("""
+            SELECT
+                c.country,
+                c.city,
+                COUNT(DISTINCT f.customer_key) AS total_customers,
+                COUNT(DISTINCT f.order_id) AS total_orders,
+                SUM(f.line_amount) AS total_revenue
+
+            FROM fact_sales f
+
+            JOIN dim_customer c
+                ON f.customer_key = c.customer_key
+
+            GROUP BY
+                c.country,
+                c.city
+
+            ORDER BY
+                total_revenue DESC;
+        """)
+
+    elif level == "country":
+        sql = text("""
+            SELECT
+                c.country,
+                COUNT(DISTINCT f.customer_key) AS total_customers,
+                COUNT(DISTINCT f.order_id) AS total_orders,
+                SUM(f.line_amount) AS total_revenue
+
+            FROM fact_sales f
+
+            JOIN dim_customer c
+                ON f.customer_key = c.customer_key
+
+            GROUP BY
+                c.country
+
+            ORDER BY
+                total_revenue DESC;
+        """)
+
+    else:
+        raise ValueError("Invalid level. Use 'city' or 'country'.")
+
+    return [dict(row._mapping) for row in conn.execute(sql)]
+
+
+def courier_monthly(conn: Connection, year: int | None = None,
+                    courier_name: str | None = None, vehicle_type: str | None = None) -> list[dict]:
+    # deliveries = distinct orders, since one order can have several product lines
+    sql = text("""
+        SELECT r.courier_name, d.year, d.month, d.month_name,
+               COUNT(DISTINCT f.order_id) AS total_deliveries,
+               SUM(f.line_amount)         AS total_revenue
+        FROM fact_sales f
+        JOIN dim_rider r ON r.rider_key = f.rider_key
+        JOIN dim_date d ON d.date_key = f.date_key
+        WHERE (:year IS NULL OR d.year = :year)
+          AND (:courier_name IS NULL OR r.courier_name = :courier_name)
+          AND (:vehicle_type IS NULL OR r.vehicle_type = :vehicle_type)
+        GROUP BY r.courier_name, d.year, d.month, d.month_name
+        ORDER BY r.courier_name, d.year, d.month;
+    """)
+    params = {"year": year, "courier_name": courier_name, "vehicle_type": vehicle_type}
+    return [dict(r._mapping) for r in conn.execute(sql, params)]
+
+def category_quarterly(conn: Connection, year: int) -> list[dict]:
+    sql = text("""
+        SELECT CASE WHEN GROUPING(d.quarter) = 1 THEN 'All quarters'
+                    ELSE CONCAT('Q', d.quarter) END       AS quarter,
+               CASE WHEN GROUPING(p.category) = 1 THEN 'All categories'
+                    ELSE p.category END                   AS category,
+               SUM(f.line_amount)                         AS total_revenue,
+               CASE WHEN GROUPING(d.quarter) = 1 THEN 'grand_total'
+                    WHEN GROUPING(p.category) = 1 THEN 'quarter_total'
+                    ELSE 'detail' END                     AS row_type
+        FROM fact_sales f
+        JOIN dim_date d    ON d.date_key = f.date_key
+        JOIN dim_product p ON p.product_key = f.product_key
+        WHERE d.year = :year
+        GROUP BY d.quarter, p.category WITH ROLLUP
+        ORDER BY GROUPING(d.quarter), d.quarter, GROUPING(p.category), p.category
+    """)
+    return [dict(r._mapping) for r in conn.execute(sql, {"year": year})]
+
